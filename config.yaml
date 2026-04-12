@@ -1,0 +1,18 @@
+name: "Hailo Example App"
+version: "1.0.0"
+slug: hailo_example
+description: >-
+  Blueprint example: connects to the Hailo Service add-on and runs
+  object detection inference on a test image.
+arch:
+  - aarch64
+  - amd64
+startup: application
+stage: experimental
+init: false
+host_ipc: true
+map:
+  - type: share
+    read_only: false
+options: {}
+schema: {}

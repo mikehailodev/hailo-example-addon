@@ -12,21 +12,25 @@ ENV DEBIAN_FRONTEND=noninteractive
 COPY --from=extractor /tmp/hailort/usr/lib/libhailort.so* /usr/lib/
 RUN ldconfig
 
-# Install Python bindings + numpy (netifaces needs gcc to build)
+# Install Python bindings + deps (netifaces needs gcc to build)
 COPY hailort-4.23.0-cp313-cp313-linux_aarch64.whl /tmp/
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev \
-    && pip install --no-cache-dir /tmp/hailort-4.23.0-cp313-cp313-linux_aarch64.whl numpy \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc libc6-dev libgl1 libglib2.0-0 \
+    && pip install --no-cache-dir \
+        /tmp/hailort-4.23.0-cp313-cp313-linux_aarch64.whl \
+        numpy opencv-python-headless flask \
     && rm -f /tmp/*.whl \
     && apt-get remove -y gcc libc6-dev && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
-COPY detect.py /detect.py
+COPY server.py /app/server.py
+COPY static/ /app/static/
 COPY run.sh /run.sh
 RUN chmod a+x /run.sh
 
 LABEL \
-    io.hass.version="1.0.0" \
+    io.hass.version="1.1.0" \
     io.hass.type="addon" \
-    io.hass.arch="aarch64|amd64"
+    io.hass.arch="aarch64"
 
 CMD ["/run.sh"]

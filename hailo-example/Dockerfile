@@ -12,10 +12,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 COPY --from=extractor /tmp/hailort/usr/lib/libhailort.so* /usr/lib/
 RUN ldconfig
 
-# Install Python bindings + numpy
+# Install Python bindings + numpy (netifaces needs gcc to build)
 COPY hailort-4.23.0-cp313-cp313-linux_aarch64.whl /tmp/
-RUN pip install --no-cache-dir /tmp/hailort-4.23.0-cp313-cp313-linux_aarch64.whl numpy \
-    && rm -f /tmp/*.whl
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev \
+    && pip install --no-cache-dir /tmp/hailort-4.23.0-cp313-cp313-linux_aarch64.whl numpy \
+    && rm -f /tmp/*.whl \
+    && apt-get remove -y gcc libc6-dev && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY detect.py /detect.py
 COPY run.sh /run.sh

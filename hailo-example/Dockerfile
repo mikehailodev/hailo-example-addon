@@ -1,21 +1,20 @@
-FROM python:3.11-slim-bookworm
+FROM python:3.13-slim-bookworm
 
-ARG TARGETARCH=arm64
-ARG HAILORT_VERSION=4.23.0
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install HailoRT client libraries (pre-built by frigate-nvr).
-# These are the SAME libraries Frigate uses — no device access needed,
-# only the gRPC client that talks to hailort_service.
-RUN apt-get update && apt-get install -y --no-install-recommends wget && \
-    if [ "${TARGETARCH}" = "amd64" ]; then arch="x86_64"; else arch="aarch64"; fi && \
-    wget -qO- \
-      "https://github.com/frigate-nvr/hailort/releases/download/v${HAILORT_VERSION}/hailort-debian12-${TARGETARCH}.tar.gz" \
-      | tar -C / -xzf - && \
-    pip install --no-cache-dir \
-      "https://github.com/frigate-nvr/hailort/releases/download/v${HAILORT_VERSION}/hailort-${HAILORT_VERSION}-cp311-cp311-linux_${arch}.whl" && \
-    pip install --no-cache-dir numpy && \
-    apt-get remove -y wget && apt-get autoremove -y && \
-    rm -rf /var/lib/apt/lists/*
+# Install HailoRT client library from .deb (libhailort + hailortcli)
+COPY hailort_4.23.0_arm64.deb /tmp/hailort.deb
+RUN apt-get update && apt-get install -y --no-install-recommends bash \
+    && dpkg -i /tmp/hailort.deb || true \
+    && apt-get install -yf --no-install-recommends \
+    && rm -f /tmp/hailort.deb \
+    && rm -rf /var/lib/apt/lists/* \
+    && ldconfig
+
+# Install Python bindings + numpy
+COPY hailort-4.23.0-cp313-cp313-linux_aarch64.whl /tmp/
+RUN pip install --no-cache-dir /tmp/hailort-4.23.0-cp313-cp313-linux_aarch64.whl numpy \
+    && rm -f /tmp/*.whl
 
 COPY detect.py /detect.py
 COPY run.sh /run.sh

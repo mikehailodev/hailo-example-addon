@@ -135,8 +135,9 @@ def main():
     # ── Step 6: Print results ───────────────────────────────────
     logger.info("Inference complete!")
     for name, data in results.items():
+        arr = np.array(data)
         logger.info("  %s: shape=%s dtype=%s min=%.4f max=%.4f",
-                     name, data.shape, data.dtype, data.min(), data.max())
+                     name, arr.shape, arr.dtype, arr.min(), arr.max())
 
     logger.info("=" * 60)
     logger.info("SUCCESS — multi-container Hailo inference works!")

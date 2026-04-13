@@ -30,5 +30,6 @@ if [ $WAITED -ge 60 ]; then
 fi
 
 echo "Running inference demo..."
-exec python3 /detect.py
+# Clear cached model if arch changed
+rm -f /data/models/yolov6n.hef 2>/dev/null || true
 exec python3 /detect.py

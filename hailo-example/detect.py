@@ -93,7 +93,7 @@ def main():
 
     # ── Step 2: Download model ──────────────────────────────────
     # Default to hailo8; override by setting HAILO_ARCH env var
-    arch = os.environ.get("HAILO_ARCH", "hailo8")
+    arch = os.environ.get("HAILO_ARCH", "hailo8l")
     model_url = MODEL_URLS.get(arch, MODEL_URLS["hailo8"])
     model_path = os.path.join(MODEL_DIR, MODEL_NAME)
     download_model(model_url, model_path)

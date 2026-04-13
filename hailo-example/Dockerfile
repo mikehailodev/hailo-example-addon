@@ -1,16 +1,16 @@
-ARG BUILD_FROM=python:3.13-slim-bookworm
-FROM ${BUILD_FROM}
+# Stage 1: Extract .deb on a debian image (has dpkg-deb)
+FROM debian:bookworm-slim AS extractor
+COPY hailort_4.23.0_arm64.deb /tmp/hailort.deb
+RUN mkdir /tmp/hailort && dpkg-deb -x /tmp/hailort.deb /tmp/hailort
+
+# Stage 2: Python runtime
+FROM python:3.13-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Extract HailoRT client library from .deb (extract to temp dir to avoid overwriting system files)
-COPY hailort_4.23.0_arm64.deb /tmp/hailort.deb
-RUN mkdir /tmp/hailort \
-    && dpkg-deb -x /tmp/hailort.deb /tmp/hailort \
-    && cp /tmp/hailort/usr/lib/libhailort.so* /usr/lib/ \
-    && cp /tmp/hailort/usr/bin/hailortcli /usr/bin/ \
-    && rm -rf /tmp/hailort /tmp/hailort.deb \
-    && ldconfig
+# Copy only the shared library from extractor
+COPY --from=extractor /tmp/hailort/usr/lib/libhailort.so* /usr/lib/
+RUN ldconfig
 
 # Install Python bindings + numpy
 COPY hailort-4.23.0-cp313-cp313-linux_aarch64.whl /tmp/

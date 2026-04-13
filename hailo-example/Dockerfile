@@ -3,13 +3,10 @@ FROM ${BUILD_FROM}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install HailoRT client library from .deb (libhailort + hailortcli)
+# Extract HailoRT client library from .deb without running postinst (needs systemctl)
 COPY hailort_4.23.0_arm64.deb /tmp/hailort.deb
-RUN apt-get update && apt-get install -y --no-install-recommends bash \
-    && dpkg -i /tmp/hailort.deb || true \
-    && apt-get install -yf --no-install-recommends \
+RUN dpkg-deb -x /tmp/hailort.deb / \
     && rm -f /tmp/hailort.deb \
-    && rm -rf /var/lib/apt/lists/* \
     && ldconfig
 
 # Install Python bindings + numpy

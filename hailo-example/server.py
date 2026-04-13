@@ -151,41 +151,42 @@ def run_inference(frame):
         ) as pipeline:
             results = pipeline.infer({input_info.name: batch})
 
-        # Parse NMS output: shape (num_classes, 5, max_detections)
-        # Each detection: [y1, x1, y2, x2, confidence] normalized
+        # Parse NMS output — ragged array: list of 80 classes,
+        # each class has shape (N_detections, 5) where 5 = [y1, x1, y2, x2, conf]
+        # N_detections varies per class, so np.array() on the whole thing fails.
         detections = []
         for name, data in results.items():
-            arr = np.array(data)
-            if arr.ndim == 4:
-                arr = arr[0]  # remove batch dim
+            # data is a list: [batch][class_id] -> ndarray of shape (N, 5)
+            # or list of lists for NMS output
+            if isinstance(data, (list, tuple)):
+                batch_data = data[0] if len(data) > 0 else data
+            else:
+                batch_data = data
 
-            # NMS output: (num_classes, 5, max_detections)
-            if arr.ndim == 3 and arr.shape[1] == 5:
-                num_classes = arr.shape[0]
-                max_dets = arr.shape[2]
-                for cls_id in range(num_classes):
-                    for det_idx in range(max_dets):
-                        y1 = float(arr[cls_id, 0, det_idx])
-                        x1 = float(arr[cls_id, 1, det_idx])
-                        y2 = float(arr[cls_id, 2, det_idx])
-                        x2 = float(arr[cls_id, 3, det_idx])
-                        conf = float(arr[cls_id, 4, det_idx])
-
-                        if conf < CONFIDENCE_THRESHOLD:
-                            continue
-
-                        # Convert normalized coords to pixel coords
-                        detections.append({
-                            "class_id": cls_id,
-                            "class_name": COCO_CLASSES[cls_id] if cls_id < len(COCO_CLASSES) else f"class_{cls_id}",
-                            "confidence": conf,
-                            "bbox": [
-                                int(x1 * orig_w),
-                                int(y1 * orig_h),
-                                int(x2 * orig_w),
-                                int(y2 * orig_h),
-                            ]
-                        })
+            for cls_id, cls_dets in enumerate(batch_data):
+                cls_arr = np.array(cls_dets)
+                if cls_arr.ndim == 0 or cls_arr.size == 0:
+                    continue
+                if cls_arr.ndim == 1:
+                    cls_arr = cls_arr.reshape(1, -1)
+                # Each row: [y1, x1, y2, x2, confidence]
+                for det in cls_arr:
+                    if len(det) < 5:
+                        continue
+                    y1, x1, y2, x2, conf = float(det[0]), float(det[1]), float(det[2]), float(det[3]), float(det[4])
+                    if conf < CONFIDENCE_THRESHOLD:
+                        continue
+                    detections.append({
+                        "class_id": cls_id,
+                        "class_name": COCO_CLASSES[cls_id] if cls_id < len(COCO_CLASSES) else f"class_{cls_id}",
+                        "confidence": conf,
+                        "bbox": [
+                            int(x1 * orig_w),
+                            int(y1 * orig_h),
+                            int(x2 * orig_w),
+                            int(y2 * orig_h),
+                        ]
+                    })
 
         return detections
     except Exception as e:

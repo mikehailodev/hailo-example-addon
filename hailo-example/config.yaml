@@ -12,7 +12,6 @@ stage: experimental
 init: false
 host_ipc: true
 map:
-  - type: share
-    read_only: false
+  - share:rw
 options: {}
 schema: {}

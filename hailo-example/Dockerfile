@@ -1,4 +1,5 @@
-FROM python:3.13-slim-bookworm
+ARG BUILD_FROM=python:3.13-slim-bookworm
+FROM ${BUILD_FROM}
 
 ENV DEBIAN_FRONTEND=noninteractive
 

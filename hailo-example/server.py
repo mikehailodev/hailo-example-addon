@@ -85,7 +85,7 @@ def init_hailo():
         params = VDevice.create_params()
         params.scheduling_algorithm = HailoSchedulingAlgorithm.ROUND_ROBIN
         params.multi_process_service = True
-        params.group_id = "shared"
+        params.group_id = "SHARED"
 
         vdevice = VDevice(params)
         logger.info("Connected to HailoRT service")

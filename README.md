@@ -68,43 +68,6 @@ confidence_threshold: 0.4
          └─────────────────┘
 ```
 
-## Switching to URL-based artifact downloads
-
-Currently, `.deb` and `.whl` files are committed in `hailo-example/`.
-When public download URLs become available:
-
-1. Delete the committed artifacts:
-   - `hailo-example/hailort_4.23.0_arm64.deb`
-   - `hailo-example/hailort-4.23.0-cp313-cp313-linux_aarch64.whl`
-
-2. Edit `hailo-example/Dockerfile` — replace the artifact COPY lines with:
-   ```dockerfile
-   ARG HAILORT_VERSION=4.23.0
-   ARG HAILORT_DEB_URL="https://example.com/hailort_${HAILORT_VERSION}_arm64.deb"
-   ARG HAILORT_WHL_URL="https://example.com/hailort-${HAILORT_VERSION}-cp313-cp313-linux_aarch64.whl"
-
-   # Stage 1: download and extract .deb
-   FROM debian:bookworm-slim AS extractor
-   RUN apt-get update && apt-get install -y --no-install-recommends curl
-   ARG HAILORT_DEB_URL
-   RUN curl -fsSL -o /tmp/hailort.deb "${HAILORT_DEB_URL}" \
-       && mkdir /tmp/hailort && dpkg-deb -x /tmp/hailort.deb /tmp/hailort
-
-   # Stage 2: Python runtime
-   FROM python:3.13-slim-bookworm
-   COPY --from=extractor /tmp/hailort/usr/lib/libhailort.so* /usr/lib/
-   RUN ldconfig
-   ARG HAILORT_WHL_URL
-   RUN pip install --no-cache-dir "${HAILORT_WHL_URL}" numpy opencv-python-headless flask
-   ```
-
-3. Remove artifacts from git history:
-   ```bash
-   git filter-repo --path hailo-example/hailort_4.23.0_arm64.deb --invert-paths
-   git filter-repo --path hailo-example/hailort-4.23.0-cp313-cp313-linux_aarch64.whl --invert-paths
-   git push --force
-   ```
-
 ## License
 
 MIT
